@@ -1,223 +1,154 @@
-# ZendSkeletonApplication
+# Learning Zend Framework 3
 
-## Introduction
+## Tutorial
+    https://olegkrivtsov.github.io/using-zend-framework-3-book/html/en/toc.html
 
-This is a skeleton application using the Zend Framework MVC layer and module
-systems. This application is meant to be used as a starting place for those
-looking to get their feet wet with Zend Framework.
+## Installation
++ Get the skeleton
+    ```
+    composer create-project -sdev zendframework/skeleton-application <target_dir>
+    ```
 
-## Installation using Composer
+## Plugins
++ src/Controller/Plugin/AccessPlugin.php
 
-The easiest way to create a new Zend Framework project is to use
-[Composer](https://getcomposer.org/).  If you don't have it already installed,
-then please install as per the [documentation](https://getcomposer.org/doc/00-intro.md).
+    hat eine checkAccess() (call it whatever you want^^)
 
-To create your new Zend Framework project:
++ module.config.php
 
-```bash
-$ composer create-project -sdev zendframework/skeleton-application path/to/install
-```
+    ```
+    'controller_plugins' => [
+        'factories' => [
+            Controller\Plugin\AccessPlugin::class => InvokableFactory::class,
+        ],
+        'aliases' => [
+            'access' => Controller\Plugin\AccessPlugin::class,
+        ]
+    ],
 
-Once installed, you can test it out immediately using PHP's built-in web server:
+    ```
 
-```bash
-$ cd path/to/install
-$ php -S 0.0.0.0:8080 -t public/ public/index.php
-# OR use the composer alias:
-$ composer run --timeout 0 serve
-```
++ IndexController.php
 
-This will start the cli-server on port 8080, and bind it to all network
-interfaces. You can then visit the site at http://localhost:8080/
-- which will bring up Zend Framework welcome page.
+    ```
+    $access=> $this->access()->checkAccess('index')
+    ```
 
-**Note:** The built-in CLI server is *for development only*.
+## Controller Factories (Dependency Injection)
++ src/Controller/Factory/IndexControllerFactory.php
 
-## Development mode
+    hat eine invoke(), die allerhand tun kann, aber letztendlich den Controller via return new IndexController($param1, $param2) aufruft
 
-The skeleton ships with [zf-development-mode](https://github.com/zfcampus/zf-development-mode)
-by default, and provides three aliases for consuming the script it ships with:
++ module.config.php
 
-```bash
-$ composer development-enable  # enable development mode
-$ composer development-disable # disable development mode
-$ composer development-status  # whether or not development mode is enabled
-```
+    ```
+    'controllers' => 'factories' =>
+        Controller\IndexController::class => Controller\Factory\IndexControllerFactory::class,
 
-You may provide development-only modules and bootstrap-level configuration in
-`config/development.config.php.dist`, and development-only application
-configuration in `config/autoload/development.local.php.dist`. Enabling
-development mode will copy these files to versions removing the `.dist` suffix,
-while disabling development mode will remove those copies.
+    ```
 
-Development mode is automatically enabled as part of the skeleton installation process. 
-After making changes to one of the above-mentioned `.dist` configuration files you will
-either need to disable then enable development mode for the changes to take effect,
-or manually make matching updates to the `.dist`-less copies of those files.
++ IndexController.php
 
-## Running Unit Tests
+    ```
+    construct($param1, $param2)
+    ```
 
-To run the supplied skeleton unit tests, you need to do one of the following:
++ Der Teil, der in der IndexControllerFactory.php invoke() passiert, kann auch in Module.php getControllerConfig() abgewickelt werden
 
-- During initial project creation, select to install the MVC testing support.
-- After initial project creation, install [zend-test](https://zendframework.github.io/zend-test/):
+    ```
+    return [
+        'factories' => [
+            Controller\AlbumController::class => function($container) {
+                    return new Controller\AlbumController(
+                    $container->get(Model\AlbumTable::class),
+                    9999
+                    );
+            },
+        ]
+    ];
+    ```
 
-  ```bash
-  $ composer require --dev zendframework/zend-test
-  ```
+## View Helper
 
-Once testing support is present, you can run the tests using:
++ src/View/Helper/FindHelper.php
 
-```bash
-$ ./vendor/bin/phpunit
-```
+    ```
+    use Zend\View\Helper\AbstractHelper;
+    ```
+    ```
+    extends AbstractHelper
 
-If you need to make local modifications for the PHPUnit test setup, copy
-`phpunit.xml.dist` to `phpunit.xml` and edit the new file; the latter has
-precedence over the former when running tests, and is ignored by version
-control. (If you want to make the modifications permanent, edit the
-`phpunit.xml.dist` file.)
+    ```
 
-## Using Vagrant
++ Kann entweder als Invokable gestaltet werden (dann gibt es nur eine Funktion "\_\_invoke()"), oder als Factory, dann kann ein Helper mehrere Funktionen haben
 
-This skeleton includes a `Vagrantfile` based on ubuntu 16.04 (bento box)
-with configured Apache2 and PHP 7.0. Start it up using:
++ Registriert wird entweder über config/module.config.php oder die Module.php
 
-```bash
-$ vagrant up
-```
++ Registrieren via module.config.php:
 
-Once built, you can also run composer within the box. For example, the following
-will install dependencies:
+    ```
+    return [
+        // …
 
-```bash
-$ vagrant ssh -c 'composer install'
-```
+        'view_helpers' => [
+            'invokables' => [
+                'find' => 'Album\View\Helper\FindHelper',
+                'lowercase' => 'Album\View\Helper\LowercaseHelper',
+            ],
+            'factories' => [
+                'another' => function($helper_plugin_manager) {
+                        $helper = new View\Helper\AnotherHelper;
+                        return $helper;
+                },
+            ],
+        ],
+    ];
 
-While this will update them:
+    ```
+    Alternativ auch:
+    ```
+    'view_helpers' => [
+        'factories' => [
+            View\Helper\AnotherHelper::class => InvokableFactory::class,
+        ],
+        'aliases' => [
+            'another' => View\Helper\AnotherHelper::class,
+        ]
+    ]
 
-```bash
-$ vagrant ssh -c 'composer update'
-```
+    ```
 
-While running, Vagrant maps your host port 8080 to port 80 on the virtual
-machine; you can visit the site at http://localhost:8080/
++ Registrieren via Module.php:
 
-> ### Vagrant and VirtualBox
->
-> The vagrant image is based on ubuntu/xenial64. If you are using VirtualBox as
-> a provider, you will need:
->
-> - Vagrant 1.8.5 or later
-> - VirtualBox 5.0.26 or later
+    ```
+    use Zend\ModuleManager\Feature\ViewHelperProviderInterface;
+    ```
 
-For vagrant documentation, please refer to [vagrantup.com](https://www.vagrantup.com/)
+    ```
+    implements ViewHelperProviderInterface
+    ```
 
-## Using docker-compose
-
-This skeleton provides a `docker-compose.yml` for use with
-[docker-compose](https://docs.docker.com/compose/); it
-uses the `Dockerfile` provided as its base. Build and start the image using:
-
-```bash
-$ docker-compose up -d --build
-```
-
-At this point, you can visit http://localhost:8080 to see the site running.
-
-You can also run composer from the image. The container environment is named
-"zf", so you will pass that value to `docker-compose run`:
-
-```bash
-$ docker-compose run zf composer install
-```
-
-## Web server setup
-
-### Apache setup
-
-To setup apache, setup a virtual host to point to the public/ directory of the
-project and you should be ready to go! It should look something like below:
-
-```apache
-<VirtualHost *:80>
-    ServerName zfapp.localhost
-    DocumentRoot /path/to/zfapp/public
-    <Directory /path/to/zfapp/public>
-        DirectoryIndex index.php
-        AllowOverride All
-        Order allow,deny
-        Allow from all
-        <IfModule mod_authz_core.c>
-        Require all granted
-        </IfModule>
-    </Directory>
-</VirtualHost>
-```
-
-### Nginx setup
-
-To setup nginx, open your `/path/to/nginx/nginx.conf` and add an
-[include directive](http://nginx.org/en/docs/ngx_core_module.html#include) below
-into `http` block if it does not already exist:
-
-```nginx
-http {
-    # ...
-    include sites-enabled/*.conf;
-}
-```
-
-
-Create a virtual host configuration file for your project under `/path/to/nginx/sites-enabled/zfapp.localhost.conf`
-it should look something like below:
-
-```nginx
-server {
-    listen       80;
-    server_name  zfapp.localhost;
-    root         /path/to/zfapp/public;
-
-    location / {
-        index index.php;
-        try_files $uri $uri/ @php;
+    ```
+    public function getViewHelperConfig() {
+        return [
+            'invokables’ => [
+                // ...
+                ],
+            ‘factories’ => [
+                // ...
+            ]
+        ]
     }
 
-    location @php {
-        # Pass the PHP requests to FastCGI server (php-fpm) on 127.0.0.1:9000
-        fastcgi_pass   127.0.0.1:9000;
-        fastcgi_param  SCRIPT_FILENAME /path/to/zfapp/public/index.php;
-        include fastcgi_params;
-    }
-}
-```
+    ```
 
-Restart the nginx, now you should be ready to go!
++ Zugriff im View (index.phtml) für eine \_\_invoke($str, $find):
 
-## QA Tools
+    ```
+    <?= $this->find("me", "e") ?>
+    ```
 
-The skeleton does not come with any QA tooling by default, but does ship with
-configuration for each of:
-
-- [phpcs](https://github.com/squizlabs/php_codesniffer)
-- [phpunit](https://phpunit.de)
-
-Additionally, it comes with some basic tests for the shipped
-`Application\Controller\IndexController`.
-
-If you want to add these QA tools, execute the following:
-
-```bash
-$ composer require --dev phpunit/phpunit squizlabs/php_codesniffer zendframework/zend-test
-```
-
-We provide aliases for each of these tools in the Composer configuration:
-
-```bash
-# Run CS checks:
-$ composer cs-check
-# Fix CS errors:
-$ composer cs-fix
-# Run PHPUnit tests:
-$ composer test
-```
++ Zugriff für eine Factory:
+    ```
+    <?= $this->factoryname()->functionname($param) ?>
+    ```

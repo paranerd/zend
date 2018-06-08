@@ -34,6 +34,19 @@ return [
             'album' => __DIR__ . '/../view',
         ],
     ],
+    'controllers' => [
+        'factories' => [
+            Controller\AlbumController::class => Controller\Factory\AlbumControllerFactory::class,
+        ],
+    ],
+    'controller_plugins' => [
+        'factories' => [
+            Controller\Plugin\AccessPlugin::class => InvokableFactory::class,
+        ],
+        'aliases' => [
+            'access' => Controller\Plugin\AccessPlugin::class,
+        ]
+    ],
     'view_helpers' => [
         'invokables' => [
             'find' => 'Album\View\Helper\FindHelper',

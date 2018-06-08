@@ -12,9 +12,18 @@ class AlbumController extends AbstractActionController
 {
     private $table;
 
-    public function __construct(AlbumTable $table)
+    public function __construct(AlbumTable $table, $my_int)
     {
         $this->table = $table;
+        $this->my_int = $my_int;
+    }
+
+    public function testAction()
+    {
+        return new ViewModel([
+            'my_int' => $this->my_int,
+            'access' => $this->access()->checkAccess('index')
+        ]);
     }
 
     public function indexAction()
