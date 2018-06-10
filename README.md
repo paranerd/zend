@@ -4,9 +4,79 @@
     https://olegkrivtsov.github.io/using-zend-framework-3-book/html/en/toc.html
 
 ## Installation
-+ Get the skeleton
-    ```
+- Get the skeleton
+    ```sh
     composer create-project -sdev zendframework/skeleton-application <target_dir>
+    ```
+
+## Module.php vs module.config.php
+- Same functionality, different notation
+
+#### Examples
+
+- Controller configuration:
+
+    - Module.php
+    ```php
+    class Module implements ConfigProviderInterface
+
+    // ...
+
+    public function getControllerConfig()
+    {
+        return [
+            'factories' => [
+                // ...
+            ]
+        ];
+    }
+    ```
+
+    - module.config.php
+    ```php
+    return [
+        'controllers' => [
+            'factories' => [
+                // ...
+            ],
+        ],
+    ]
+    ```
+
+- View helpers:
+
+    - Module.php
+    ```php
+    class Module implements ViewHelperProviderInterface
+
+    // ...
+
+    public function getViewHelperConfig() {
+        return [
+            'invokables’ => [
+                // ...
+                ],
+            ‘factories’ => [
+                // ...
+            ]
+        ]
+    }
+    ```
+
+    - module.config.php
+    ```php
+    return [
+        // …
+
+        'view_helpers' => [
+            'invokables' => [
+                // ...
+            ],
+            'factories' => [
+                // ...
+            ],
+        ],
+    ];
     ```
 
 ## Plugins
@@ -16,7 +86,7 @@
 
 + module.config.php
 
-    ```
+    ```php
     'controller_plugins' => [
         'factories' => [
             Controller\Plugin\AccessPlugin::class => InvokableFactory::class,
@@ -30,7 +100,7 @@
 
 + IndexController.php
 
-    ```
+    ```php
     $access=> $this->access()->checkAccess('index')
     ```
 
@@ -41,7 +111,7 @@
 
 + module.config.php
 
-    ```
+    ```php
     'controllers' => 'factories' =>
         Controller\IndexController::class => Controller\Factory\IndexControllerFactory::class,
 
@@ -49,13 +119,13 @@
 
 + IndexController.php
 
-    ```
+    ```php
     construct($param1, $param2)
     ```
 
 + Der Teil, der in der IndexControllerFactory.php invoke() passiert, kann auch in Module.php getControllerConfig() abgewickelt werden
 
-    ```
+    ```php
     return [
         'factories' => [
             Controller\AlbumController::class => function($container) {
@@ -70,25 +140,60 @@
 
 ## View Helper
 
-+ src/View/Helper/FindHelper.php
+- Helper functions to be called inside the View
+- Can be implemented as an invokable (each invokable-helper has only one function) or as a factory (can have multiple functions)
 
-    ```
+- src/View/Helper/LowercaseHelper.php
+
+    ```php
+    namespace Album\View\Helper;
     use Zend\View\Helper\AbstractHelper;
+    class LowercaseHelper extends AbstractHelper
+    {
+        public function __invoke($str)
+        {
+            if (!is_string($str)) {
+                return $str;
+            }
+            return strtolower($str);
+        }
+    }
     ```
+
+- src/View/Helper/AnotherHelper.php
+
+    ```php
+    namespace Album\View\Helper;
+    use Zend\View\Helper\AbstractHelper;
+    class AnotherHelper extends AbstractHelper
+    {
+        public function __invoke($str)
+        {
+            return $this;
+        }
+        public function find($str, $find) {
+            if (!is_string($str)){
+                return 'must be string';
+            }
+            if (strpos($str, $find) === false){
+                return 'not found';
+            }
+            return 'found';
+        }
+        public function lowercase($str) {
+            if (!is_string($str)) {
+                return $str;
+            }
+            return strtolower($str);
+        }
+    }
     ```
-    extends AbstractHelper
 
-    ```
+- Registering in module.config.php
 
-+ Kann entweder als Invokable gestaltet werden (dann gibt es nur eine Funktion "\_\_invoke()"), oder als Factory, dann kann ein Helper mehrere Funktionen haben
-
-+ Registriert wird entweder über config/module.config.php oder die Module.php
-
-+ Registrieren via module.config.php:
-
-    ```
+    ```php
     return [
-        // …
+        // ...
 
         'view_helpers' => [
             'invokables' => [
@@ -105,8 +210,10 @@
     ];
 
     ```
-    Alternativ auch:
-    ```
+
+- Alternatively with an alias
+
+    ```php
     'view_helpers' => [
         'factories' => [
             View\Helper\AnotherHelper::class => InvokableFactory::class,
@@ -118,37 +225,12 @@
 
     ```
 
-+ Registrieren via Module.php:
+- Accessing in the view
 
-    ```
-    use Zend\ModuleManager\Feature\ViewHelperProviderInterface;
-    ```
-
-    ```
-    implements ViewHelperProviderInterface
+    ```php
+    <?= $this->lowercase("lOwErCaSeMe") ?>
     ```
 
-    ```
-    public function getViewHelperConfig() {
-        return [
-            'invokables’ => [
-                // ...
-                ],
-            ‘factories’ => [
-                // ...
-            ]
-        ]
-    }
-
-    ```
-
-+ Zugriff im View (index.phtml) für eine \_\_invoke($str, $find):
-
-    ```
-    <?= $this->find("me", "e") ?>
-    ```
-
-+ Zugriff für eine Factory:
-    ```
-    <?= $this->factoryname()->functionname($param) ?>
+    ```php
+    <?= $this->another()->lowercase("lOwErCaSeMe") ?>
     ```
