@@ -7,6 +7,7 @@ use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
 use Album\Form\AlbumForm;
 use Album\Model\Album;
+use Zend\View\Model\JsonModel;
 
 class AlbumController extends AbstractActionController
 {
@@ -18,11 +19,61 @@ class AlbumController extends AbstractActionController
         $this->my_int = $my_int;
     }
 
+    public function regexAction()
+    {
+        $page = $this->params()->fromRoute('page', 'default-page');
+        $section = $this->params()->fromRoute('section', 'default-section');
+
+        return new ViewModel([
+            'page' => $page,
+            'section' => $section
+        ]);
+    }
+
+    public function routingAction()
+    {
+        $param1 = $this->params()->fromRoute('param1', 'default-param1');
+        $param2 = $this->params()->fromRoute('param2', 'default-param2');
+
+        return new ViewModel([
+            'param1' => $param1,
+            'param2' => $param2
+        ]);
+    }
+
     public function testAction()
     {
-        return new ViewModel([
+        $view_model = new ViewModel([
             'my_int' => $this->my_int,
-            'access' => $this->access()->checkAccess('index')
+            'access' => $this->access()->checkAccess('alice')
+        ]);
+
+        $view_model->setTemplate('album/my/test');
+
+        return $view_model;
+    }
+
+    public function maptestAction()
+    {
+        return new ViewModel([
+            'param' => "my maptest param"
+        ]);
+    }
+
+    public function noviewAction()
+    {
+        return $this->getResponse();
+    }
+
+    public function jsonAction()
+    {
+        return new JsonModel([
+            'status' => 'SUCCESS',
+            'message'=>'Here is your data',
+            'data' => [
+                'full_name' => 'John Doe',
+                'address' => '51 Middle st.'
+            ]
         ]);
     }
 

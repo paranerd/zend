@@ -8,13 +8,13 @@ class AccessPlugin extends AbstractPlugin
 {
     // This method checks whether user is allowed
     // to visit the page
-    public function checkAccess($actionName)
+    public function checkAccess($username)
     {
-        if ($actionName == 'test') {
-            return "true";
+        if ($username == 'bob') {
+            return "yes";
         }
         else {
-            return "false";
+            return "no";
         }
     }
 }
