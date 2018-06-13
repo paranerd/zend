@@ -8,6 +8,7 @@ use Zend\View\Model\ViewModel;
 use Album\Form\AlbumForm;
 use Album\Model\Album;
 use Zend\View\Model\JsonModel;
+use Zend\Mvc\MvcEvent;
 
 class AlbumController extends AbstractActionController
 {
@@ -17,6 +18,46 @@ class AlbumController extends AbstractActionController
     {
         $this->table = $table;
         $this->my_int = $my_int;
+    }
+
+    public function onDispatch(MvcEvent $e)
+    {
+    $response = parent::onDispatch($e);
+
+    // Set alternative layout
+    //$this->layout()->setTemplate('album/layout');
+
+    // Return the response
+    return $response;
+    }
+
+    public function breadcrumbsAction()
+    {
+        return new ViewModel([]);
+    }
+
+    public function partialAction()
+    {
+        $products = [
+            [
+              'id' => 1,
+              'name' => 'Digital Camera',
+              'price' => 99.95,
+            ],
+            [
+              'id' => 2,
+              'name' => 'Tripod',
+              'price' => 29.95,
+            ]
+          ];
+
+          $view_model = new ViewModel([
+              'products' => $products,
+          ]);
+
+          $view_model->setTemplate('album/partial/partial');
+
+          return $view_model;
     }
 
     public function regexAction()

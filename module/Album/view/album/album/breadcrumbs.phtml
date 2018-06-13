@@ -1,0 +1,10 @@
+<h1>Breadcrumbs</h1>
+<?php
+$this->pageBreadcrumbs()->setItems([
+    'Home' => $this->url('albumhome'),
+    'Add' => $this->url('album', ['action' => 'add']),
+]);
+?>
+
+<!-- Breadcrumbs -->
+<?= $this->pageBreadcrumbs()->render(); ?>

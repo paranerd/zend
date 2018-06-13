@@ -4,6 +4,7 @@ namespace Album;
 
 use Zend\Router\Http\Segment;
 use Zend\Router\Http\Regex;
+use Zend\Router\Http\Literal;
 use Zend\ServiceManager\Factory\InvokableFactory;
 
 return [
@@ -14,6 +15,16 @@ return [
     ],*/
     'router' => [
         'routes' => [
+            'albumhome' => [
+                'type' => Literal::class,
+                'options' => [
+                    'route'    => '/',
+                    'defaults' => [
+                        'controller' => Controller\AlbumController::class,
+                        'action'     => 'index',
+                    ],
+                ],
+            ],
             'album' => [
                 'type' => Segment::class,
                 'options' => [
@@ -57,6 +68,7 @@ return [
     ],
     'view_manager' => [
         'template_map' => [
+            //'layout/layout'           => __DIR__ . '/../view/layout/layout.phtml',
             'album/album/maptest' => __DIR__ . '/../view/album/mapped/index.phtml',
         ],
         'template_path_stack' => [
@@ -93,10 +105,10 @@ return [
             },
         ],*/
         'factories' => [
-            View\Helper\AnotherHelper::class => InvokableFactory::class,
+            View\Helper\BreadcrumbsHelper::class => InvokableFactory::class,
         ],
         'aliases' => [
-            'another' => View\Helper\AnotherHelper::class,
+            'pageBreadcrumbs' => View\Helper\BreadcrumbsHelper::class,
         ]
     ],
 ];
