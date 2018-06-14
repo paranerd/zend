@@ -596,3 +596,133 @@
 - The first parameter ('routingtest') is the NAME of the route in module.config.php, NOT the first part of the URL!
 - In the second parameter, you can pass parameters^^ to the URL
 - The 'query' in the third parameter adds key-value-pairs after a '?'
+
+
+## Forms
+- Define a controller-action that will render the form on GET and process data on POST
+    ```php
+    <?php
+    public function formAction()
+    {
+        $form = new ExampleForm();
+
+        // Check if user has submitted the form
+        if ($this->getRequest()->isPost()) {
+            // Fill in the form with POST data
+            $data = $this->params()->fromPost();
+
+            $form->setData($data);
+
+            // Validate form
+            if ($form->isValid()) {
+                // Get filtered and validated data
+                $data = $form->getData();
+                $title = $data['title'];
+
+                // Redirect to "Thank You" page
+                return $this->redirect()->toRoute('album');
+            }
+        }
+
+        // Pass form variable to view
+        return new ViewModel([
+            'form' => $form
+        ]);
+    }
+    ?>
+    ```
+- src/Form/ExampleForm.php
+- The name of the input-filter must match the name of the corresponding element
+    ```php
+    <?php
+    namespace Album\Form;
+
+    use Zend\Form\Form;
+    use Zend\InputFilter\InputFilter;
+
+    class ExampleForm extends Form
+    {
+        public function __construct() {
+            parent::__construct('example');
+
+            $this->addElements();
+            $this->addInputFilter();
+        }
+
+        private function addElements()
+        {
+            $this->add([
+                'name' => 'title',
+                'type' => 'text',
+                'options' => [
+                    'label' => 'Title',
+                ],
+            ]);
+
+            $this->add([
+                'name' => 'submit',
+                'type' => 'submit',
+                'attributes' => [
+                    'value' => 'Go',
+                    'id' => 'submitbutton',
+                ],
+            ]);
+        }
+
+        private function addInputFilter()
+        {
+            $inputFilter = new InputFilter();
+            $this->setInputFilter($inputFilter);
+
+            $inputFilter->add([
+                'name'     => 'title',
+                'required' => true,
+                'filters'  => [
+                    ['name' => 'StringTrim'],
+                    ['name' => 'StripTags'],
+                    ['name' => 'StripNewlines'],
+                ],
+                'validators' => [
+                    [
+                        'name' => 'StringLength',
+                        'options' => [
+                            'min' => 1,
+                            'max' => 6
+                        ],
+                    ],
+                ],
+            ]);
+        }
+    }
+    ```
+- view/album/album/form.phtml
+- Validator-errors are shown via $this->formElementErrors()->render()
+    ```php
+    <h1><?= $this->escapeHtml($title) ?></h1>
+    <?php
+    // This provides a default CSS class and placeholder text for the title element:
+    $title = $form->get('title');
+    $title->setAttribute('class', 'form-control');
+    $title->setAttribute('placeholder', 'Title');
+
+    // This provides CSS classes for the submit button:
+    $submit = $form->get('submit');
+    $submit->setAttribute('class', 'btn btn-primary');
+
+    $form->setAttribute('action', $this->url('album', ['action' => 'form']));
+    $form->prepare();
+
+    echo $this->form()->openTag($form);
+    ?>
+    <?php // Wrap the elements in divs marked as form groups, and render the
+          // label, element, and errors separately within ?>
+    <div class="form-group">
+        <?= $this->formLabel($title) ?>
+        <?= $this->formElement($title) ?>
+        <?= $this->formElementErrors()->render($title, ['class' => 'help-block']) ?>
+    </div>
+
+    <?php
+    echo $this->formSubmit($submit);
+    echo $this->form()->closeTag();
+    ```

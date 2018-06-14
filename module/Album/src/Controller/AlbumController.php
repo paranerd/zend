@@ -6,6 +6,7 @@ use Album\Model\AlbumTable;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
 use Album\Form\AlbumForm;
+use Album\Form\ExampleForm;
 use Album\Model\Album;
 use Zend\View\Model\JsonModel;
 use Zend\Mvc\MvcEvent;
@@ -29,6 +30,51 @@ class AlbumController extends AbstractActionController
 
     // Return the response
     return $response;
+    }
+
+    public function formAction()
+    {
+        $form = new ExampleForm();
+
+        // Check if user has submitted the form
+        if ($this->getRequest()->isPost()) {
+            // Fill in the form with POST data
+            $data = $this->params()->fromPost();
+
+            $form->setData($data);
+
+            // Validate form
+            if ($form->isValid()) {
+                // Get filtered and validated data
+                $data = $form->getData();
+                $title = $data['title'];
+
+                // Redirect to "Thank You" page
+                return $this->redirect()->toRoute('album');
+            }
+        }
+
+        // Pass form variable to view
+        return new ViewModel([
+            'form' => $form
+        ]);
+    }
+
+    public function contactusAction()
+    {
+        // Check if user has submitted the form
+        if ($this->getRequest()->isPost()) {
+            // Retrieve form data from POST variables
+            $data = $this->params()->fromPost();
+
+            // ... Do something with the data ...
+            var_dump($data);
+        }
+
+        // Pass form variable to view
+        return new ViewModel([
+              'form' => $form
+        ]);
     }
 
     public function breadcrumbsAction()

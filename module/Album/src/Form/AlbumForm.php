@@ -9,6 +9,12 @@ class AlbumForm extends Form
     public function __construct($name = null) {
         parent::__construct('album');
 
+        // Add form elements
+        $this->addElements();
+    }
+
+    private function addElements()
+    {
         $this->add([
             'name' => 'id',
             'type' => 'hidden',

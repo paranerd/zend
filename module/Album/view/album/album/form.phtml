@@ -1,5 +1,5 @@
 <?php
-$title = 'Add new album';
+$title = 'Example Form';
 $this->headTitle($title);
 ?>
 <h1><?= $this->escapeHtml($title) ?></h1>
@@ -7,18 +7,13 @@ $this->headTitle($title);
 // This provides a default CSS class and placeholder text for the title element:
 $title = $form->get('title');
 $title->setAttribute('class', 'form-control');
-$title->setAttribute('placeholder', 'Album title');
-
-// This provides a default CSS class and placeholder text for the artist element:
-$artist = $form->get('artist');
-$artist->setAttribute('class', 'form-control');
-$artist->setAttribute('placeholder', 'Artist');
+$title->setAttribute('placeholder', 'Title');
 
 // This provides CSS classes for the submit button:
 $submit = $form->get('submit');
 $submit->setAttribute('class', 'btn btn-primary');
 
-$form->setAttribute('action', $this->url('album', ['action' => 'add']));
+$form->setAttribute('action', $this->url('album', ['action' => 'form']));
 $form->prepare();
 
 echo $this->form()->openTag($form);
@@ -31,13 +26,6 @@ echo $this->form()->openTag($form);
     <?= $this->formElementErrors()->render($title, ['class' => 'help-block']) ?>
 </div>
 
-<div class="form-group">
-    <?= $this->formLabel($artist) ?>
-    <?= $this->formElement($artist) ?>
-    <?= $this->formElementErrors()->render($artist, ['class' => 'help-block']) ?>
-</div>
-
 <?php
 echo $this->formSubmit($submit);
-echo $this->formHidden($form->get('id'));
 echo $this->form()->closeTag();
