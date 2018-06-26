@@ -39,6 +39,16 @@ return [
                     ],
                 ],
             ],
+            'image' => [
+                'type' => Segment::class,
+                'options' => [
+                    'route' => '/image[/:action]',
+                    'defaults' => [
+                        'controller' => Controller\ImageController::class,
+                        'action' => 'index',
+                    ],
+                ],
+            ],
             'routingtest' => [
                 'type' => Segment::class,
                 'options' => [
@@ -83,6 +93,7 @@ return [
     'controllers' => [
         'factories' => [
             Controller\AlbumController::class => Controller\Factory\AlbumControllerFactory::class,
+            Controller\ImageController::class => InvokableFactory::class,
         ],
     ],
     'controller_plugins' => [

@@ -23,13 +23,13 @@ class AlbumController extends AbstractActionController
 
     public function onDispatch(MvcEvent $e)
     {
-    $response = parent::onDispatch($e);
+        $response = parent::onDispatch($e);
 
-    // Set alternative layout
-    //$this->layout()->setTemplate('album/layout');
+        // Set alternative layout
+        //$this->layout()->setTemplate('album/layout');
 
-    // Return the response
-    return $response;
+        // Return the response
+        return $response;
     }
 
     public function formAction()
