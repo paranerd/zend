@@ -122,4 +122,7 @@ return [
             'pageBreadcrumbs' => View\Helper\BreadcrumbsHelper::class,
         ]
     ],
+    'session_containers' => [
+        'ContainerNamespace'
+    ],
 ];

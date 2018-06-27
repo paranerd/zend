@@ -810,10 +810,11 @@
     ```
 
 ## Captchas
-```sh
-composer require zendframework/zend-captcha
-composer require zendframework/zend-text
-```
+- Install necessary packages
+    ```sh
+    composer require zendframework/zend-captcha
+    composer require zendframework/zend-text
+    ```
 - src/Form/UploadForm.php
     ```php
     <?php
@@ -841,3 +842,101 @@ composer require zendframework/zend-text
       <p class="help-block">Enter the letters above as you see them.</p>
     </div>
     ```
+
+## Sessions
+- [app]/config/autoload/global.php
+    ```php
+    <?php
+    use Zend\Session\Storage\SessionArrayStorage;
+    use Zend\Session\Validator\RemoteAddr;
+    use Zend\Session\Validator\HttpUserAgent;
+
+    return [
+        // Session configuration.
+        'session_config' => [
+            // Session cookie will expire in 1 hour.
+            'cookie_lifetime' => 60*60*1,
+            // Session data will be stored on server maximum for 30 days.
+            'gc_maxlifetime'     => 60*60*24*30,
+        ],
+        // Session manager configuration.
+        'session_manager' => [
+            // Session validators (used for security).
+            'validators' => [
+                RemoteAddr::class,
+                HttpUserAgent::class,
+            ]
+        ],
+        // Session storage configuration.
+        'session_storage' => [
+            'type' => SessionArrayStorage::class
+        ],
+        'db' => [
+            'driver' => 'Pdo',
+            'dsn' => sprintf('sqlite:%s/data/zftutorial.db', realpath(getcwd())),
+        ],
+    ];
+    ```
+- config/module.config.php
+    ```php
+    <?php
+    return [
+        // ...
+        'session_containers' => [
+            'ContainerNamespace'
+        ],
+    ]
+    ```
+- src/Controller/AlbumControllerFactory.php
+    ```php
+    <?php
+    // ...
+    public function __invoke(ContainerInterface $container, $requestedName, array $options = null)
+    {
+        $session_container = $container->get('ContainerNamespace');
+
+        return new AlbumController($table, $session_container, $my_int);
+    }
+    ```
+- src/Controller/AlbumController.php
+    ```php
+    <?php
+    use Zend\Session\Container;
+    // ...
+    public function sessionAction()
+    {
+        if (isset($this->session_container->counter)) {
+            $this->session_container->counter += 1;
+        }
+        else {
+            $this->session_container->counter = 0;
+        }
+
+        return new ViewModel([
+            'counter' => $this->session_container->counter,
+        ]);
+    }
+    ```
+## Database-Management with Doctrine
+#### Setup
+- Install doctrine
+    ```sh
+    composer require doctrine/doctrine-orm-module
+    ```
+- Add to zend/config/modules.config.php
+    ```php
+    <?php
+    return [
+        // ...
+        'DoctrineModule',
+        'DoctrineORMModule'
+    ]
+    ```
+
+## User-Management
+- Prerequisites
+```
+sudo apt install php-mbstring
+composer require zendframework/zend-math
+composer require zendframework/zend-crypt
+```

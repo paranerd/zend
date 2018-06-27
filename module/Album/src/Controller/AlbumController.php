@@ -10,14 +10,18 @@ use Album\Form\ExampleForm;
 use Album\Model\Album;
 use Zend\View\Model\JsonModel;
 use Zend\Mvc\MvcEvent;
+use Zend\Session\Container;
 
 class AlbumController extends AbstractActionController
 {
     private $table;
+    private $my_int;
+    private $session_container;
 
-    public function __construct(AlbumTable $table, $my_int)
+    public function __construct(AlbumTable $table, $session_container, $my_int)
     {
         $this->table = $table;
+        $this->session_container = $session_container;
         $this->my_int = $my_int;
     }
 
@@ -30,6 +34,20 @@ class AlbumController extends AbstractActionController
 
         // Return the response
         return $response;
+    }
+
+    public function sessionAction()
+    {
+        if (isset($this->session_container->counter)) {
+            $this->session_container->counter += 1;
+        }
+        else {
+            $this->session_container->counter = 0;
+        }
+
+        return new ViewModel([
+            'counter' => $this->session_container->counter,
+        ]);
     }
 
     public function formAction()
