@@ -808,3 +808,36 @@
         ]);
     }
     ```
+
+## Captchas
+```sh
+composer require zendframework/zend-captcha
+composer require zendframework/zend-text
+```
+- src/Form/UploadForm.php
+    ```php
+    <?php
+    $this->add([
+        'type'  => 'captcha',
+        'name' => 'captcha',
+        'attributes' => [
+        ],
+        'options' => [
+            'label' => 'Human check',
+            'captcha' => [
+                'class' => 'Figlet',
+                'wordLen' => 6,
+                'expiration' => 600,
+            ],
+        ],
+    ]);
+    ```
+- view/album/image/upload.phtml
+    ```html
+    <div class="form-group">
+      <?= $this->formLabel($form->get('captcha')); ?>
+      <?= $this->formElement($form->get('captcha')); ?>
+      <?= $this->formElementErrors($form->get('captcha')); ?>
+      <p class="help-block">Enter the letters above as you see them.</p>
+    </div>
+    ```

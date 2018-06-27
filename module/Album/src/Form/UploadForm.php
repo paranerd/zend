@@ -33,6 +33,21 @@ class UploadForm extends Form
         ]);
 
         $this->add([
+            'type'  => 'captcha',
+            'name' => 'captcha',
+            'attributes' => [
+            ],
+            'options' => [
+                'label' => 'Human check',
+                'captcha' => [
+                    'class' => 'Figlet',
+                    'wordLen' => 6,
+                    'expiration' => 600,
+                ],
+            ],
+        ]);
+
+        $this->add([
             'name' => 'submit',
             'type' => 'submit',
             'attributes' => [
