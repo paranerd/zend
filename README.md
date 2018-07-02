@@ -933,6 +933,29 @@
     ]
     ```
 
+## Add new module
+- zend/composer.json
+    ```
+    "autoload": {
+        "psr-4": {
+            // ...
+            "User\\": "module/User/src/"
+        }
+    },
+    ```
+    ```
+    composer update
+    ```
+- zend/config/modules.config.php
+    ```php
+    <?php
+    return [
+        // ...
+        User,
+    ]
+    ```
+- Create Module-Directory under zend/module/
+
 ## User-Management
 - Prerequisites
 ```
@@ -968,6 +991,7 @@ composer require zendframework/zend-crypt
 #### Access management
 - config/module.config.php
     ```php
+    <?php
     return [
         // ...
         'access_filter' => [
