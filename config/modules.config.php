@@ -27,5 +27,6 @@ return [
     'Application',
     'Album',
     'DoctrineModule',
-    'DoctrineORMModule'
+    'DoctrineORMModule',
+    'User'
 ];

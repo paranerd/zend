@@ -940,3 +940,61 @@ sudo apt install php-mbstring
 composer require zendframework/zend-math
 composer require zendframework/zend-crypt
 ```
+
+#### Set database credentials
+- zend/config/autoload/local.php
+    ```php
+    <?php
+    use Doctrine\DBAL\Driver\PDOMySql\Driver as PDOMySqlDriver;
+
+    return [
+        // Database connection configuration.
+        'doctrine' => [
+            'connection' => [
+                'orm_default' => [
+                    'driverClass' => PDOMySqlDriver::class,
+                    'params' => [
+                        'host'     => '127.0.0.1',
+                        'user'     => 'root',
+                        'password' => 'root',
+                        'dbname'   => 'zend',
+                    ]
+                ],
+            ],
+        ],
+    ];
+    ```
+
+#### Access management
+- config/module.config.php
+    ```php
+    return [
+        // ...
+        'access_filter' => [
+            'controllers' => [
+                Controller\UserController::class => [
+                    // Give access to "resetPassword", "message" and "setPassword" actions
+                    // to anyone.
+                    ['actions' => ['resetPassword', 'message', 'setPassword'], 'allow' => '*'],
+                    // Give access to "index", "add", "edit", "view", "changePassword" actions to authorized users only.
+                    ['actions' => ['index', 'add', 'edit', 'view', 'changePassword'], 'allow' => '@']
+                ],
+            ]
+        ],
+    ]
+    ```
+- The src/Service/AuthManager.php -> filterAccess() uses this info to determine if a visitor is allowed to open the page
+- It is passed a controller-name as well as an action-name
+- With these it loops over all the entries of the given controller and looks for the action-name (or an "*" matching all pages) and the corresponding "allow"-value
+- In "restrictive"-mode any action that is not in there is considered to require authentication (locked down unless stated otherwise)
+- In "permissive"-mode an action is open unless stated otherwise
+
+#### General
+- The src/Service/AuthenticationServiceFactory.php apparently overrides the default AuthenticationService to set the src/Service/AuthAdapter.php as the adapter
+- The src/Service/Factory/AuthManagerFactory.php passes an AuthenticationService-Instance to the AuthManager
+- That way the AuthManager can access the AuthAdapter
+
+#### Logging in
+- On POST the loginAction() in the AuthController calls the src/Service/AuthManager.php -> login()
+- This in turn calls the src/Service/AuthAdapter.php -> authenticate()
+- The authenticate() queries the database for the email, and if found,  verifies the password
