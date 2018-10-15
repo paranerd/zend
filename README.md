@@ -9,6 +9,33 @@
     composer create-project -sdev zendframework/skeleton-application <target_dir>
     ```
 
+## Add new module
+- zend/composer.json
+```php
+<?php
+"autoload": {
+    "psr-4": {
+        // ...
+        "User\\": "module/User/src/"
+    }
+},
+```
+
+```bash
+composer update
+```
+- zend/config/modules.config.php
+
+```php
+<?php
+return [
+    // ...
+    User,
+]
+```
+
+- Create Module-Directory under zend/module/
+
 ## Module.php vs module.config.php
 - Same functionality, different notation
 
@@ -49,10 +76,10 @@
 
         public function getViewHelperConfig() {
             return [
-                'invokables’ => [
+                'invokables' => [
                     // ...
                     ],
-                ‘factories’ => [
+                'factories' => [
                     // ...
                 ]
             ]
@@ -196,7 +223,6 @@
             ],
         ],
     ];
-
     ```
 - Alternatively with an alias
     ```php
@@ -844,6 +870,18 @@
     ```
 
 ## Sessions
+```bash
+composer require zendframework/zend-session
+```
+
+- `[app]/config/modules.config.php`
+```php
+return [
+	'Zend\Session',
+	// ...
+]
+```
+
 - [app]/config/autoload/global.php
     ```php
     <?php
@@ -871,10 +909,6 @@
         'session_storage' => [
             'type' => SessionArrayStorage::class
         ],
-        'db' => [
-            'driver' => 'Pdo',
-            'dsn' => sprintf('sqlite:%s/data/zftutorial.db', realpath(getcwd())),
-        ],
     ];
     ```
 - config/module.config.php
@@ -890,15 +924,26 @@
 - src/Controller/AlbumControllerFactory.php
     ```php
     <?php
-    // ...
     public function __invoke(ContainerInterface $container, $requestedName, array $options = null)
     {
         $session_container = $container->get('ContainerNamespace');
 
-        return new AlbumController($table, $session_container, $my_int);
+        return new AlbumController($session_container);
     }
     ```
 - src/Controller/AlbumController.php
+	```php
+	<?php
+	private $session_container;
+	```
+
+	```php
+	<?php
+	public function __construct($session_container) {
+		$this->session_container = $session_container;
+	}
+	```
+
     ```php
     <?php
     use Zend\Session\Container;
@@ -933,37 +978,6 @@
     ]
     ```
 
-## Add new module
-- zend/composer.json
-    ```
-    "autoload": {
-        "psr-4": {
-            // ...
-            "User\\": "module/User/src/"
-        }
-    },
-    ```
-    ```
-    composer update
-    ```
-- zend/config/modules.config.php
-    ```php
-    <?php
-    return [
-        // ...
-        User,
-    ]
-    ```
-- Create Module-Directory under zend/module/
-
-## User-Management
-- Prerequisites
-```
-sudo apt install php-mbstring
-composer require zendframework/zend-math
-composer require zendframework/zend-crypt
-```
-
 #### Set database credentials
 - zend/config/autoload/local.php
     ```php
@@ -988,7 +1002,95 @@ composer require zendframework/zend-crypt
     ];
     ```
 
-#### Access management
+## Authentication
+- Prerequisites
+For Authentication to work, we need to have Sessions in place first!
+```bash
+sudo apt install php-mbstring
+```
+
+```bash
+composer require zendframework/zend-authentication
+```
+
+```bash
+composer require zendframework/zend-math
+```
+
+```bash
+composer require zendframework/zend-crypt
+```
+
+`module.config.php`
+Add routes
+```php
+'login' => [
+	'type' => Literal::class,
+	'options' => [
+		'route'    => '/login',
+		'defaults' => [
+			'controller' => Controller\AuthController::class,
+			'action'     => 'login',
+		],
+	],
+],
+'logout' => [
+	'type' => Literal::class,
+	'options' => [
+		'route'    => '/logout',
+		'defaults' => [
+			'controller' => Controller\AuthController::class,
+			'action'     => 'logout',
+		],
+	],
+],
+```
+It's better to have them Literal than Segment (auth[/:action]) so we can refer to them easily when redirecting to login i.e.
+
+Link controller to factory
+```php
+'controllers' => [
+	'factories' => [
+		Controller\AuthController::class => Controller\Factory\AuthControllerFactory::class,
+	],
+],
+```
+
+Add Service Managers
+```php
+'service_manager' => [
+	'factories' => [
+		\Zend\Authentication\AuthenticationService::class => Service\Factory\AuthenticationServiceFactory::class,
+		Service\AuthAdapter::class => Service\Factory\AuthAdapterFactory::class,
+		Service\AuthManager::class => Service\Factory\AuthManagerFactory::class,
+	],
+],
+```
+
+- Other files required:
+    - Controller/AuthController.php
+    - Controller/Factory/AuthControllerFactory.php
+    - Service/AuthAdapter.php
+    - Service/AuthManager.php
+    - Service/Factory/AuthAdapterFactory.php
+    - Service/Factory/AuthManagerFactory.php
+    - view/application/auth/login.phtml
+
+#### General
+- The src/Service/AuthenticationServiceFactory.php apparently overrides the default AuthenticationService to set the src/Service/AuthAdapter.php as the adapter
+- The src/Service/Factory/AuthManagerFactory.php passes an AuthenticationService-Instance to the AuthManager
+- That way the AuthManager can access the AuthAdapter
+
+#### Logging in
+- On POST the loginAction() in the AuthController calls the src/Service/AuthManager.php -> login()
+- This in turn calls the src/Service/AuthAdapter.php -> authenticate()
+- The authenticate() queries the database for the email, and if found,  verifies the password
+
+#### Access filter
+We could inject the AuthService into every Controller to check for logged in users, but that's very cumbersome. So instead we're going to use access filters.
+
+- check `onBootstrap()` and `onDispatch()` in Module.php
+
 - config/module.config.php
     ```php
     <?php
@@ -1007,18 +1109,11 @@ composer require zendframework/zend-crypt
         ],
     ]
     ```
-- The src/Service/AuthManager.php -> filterAccess() uses this info to determine if a visitor is allowed to open the page
-- It is passed a controller-name as well as an action-name
-- With these it loops over all the entries of the given controller and looks for the action-name (or an "*" matching all pages) and the corresponding "allow"-value
-- In "restrictive"-mode any action that is not in there is considered to require authentication (locked down unless stated otherwise)
-- In "permissive"-mode an action is open unless stated otherwise
+- Procedure
+    - `onBootstrap()` calls `onDispatch()`
+	- `onDispatch()` extracts controller-name and action-name and calls `src/Service/AuthManager.php` -> `filterAccess()`
+    - `filterAccess()` loops over all the entries of the given controller and looks for the action-name (or an "*" matching all pages) and the corresponding "allow"-value
+    - In "restrictive"-mode any action that is not in there is considered to require authentication (locked down unless stated otherwise)
+    - In "permissive"-mode an action is open unless stated otherwise
+	- if `filterAccess()` returns false, `onDispatch()` redirects to 'login' (and includes the URL the user was denied access to as 'redirectUrl', so we can redirect to it after successful login)
 
-#### General
-- The src/Service/AuthenticationServiceFactory.php apparently overrides the default AuthenticationService to set the src/Service/AuthAdapter.php as the adapter
-- The src/Service/Factory/AuthManagerFactory.php passes an AuthenticationService-Instance to the AuthManager
-- That way the AuthManager can access the AuthAdapter
-
-#### Logging in
-- On POST the loginAction() in the AuthController calls the src/Service/AuthManager.php -> login()
-- This in turn calls the src/Service/AuthAdapter.php -> authenticate()
-- The authenticate() queries the database for the email, and if found,  verifies the password
